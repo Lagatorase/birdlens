@@ -2,20 +2,29 @@
 
 ## ACTION NEEDED
 
-**Reason:** Two things on this PC need admin rights, a reboot and some GUI clicks, so I can't do them myself. WSL isn't installed (`wsl` fails with `WSL_E_WSL_OPTIONAL_COMPONENT_REQUIRED`), so training can't start. Android Studio is installed but its first-run setup was never completed, so there's no Android SDK and no emulator (`flutter doctor`: "Unable to locate Android SDK").
+**Reason:** CPU virtualization (AMD SVM) is turned off in the BIOS. Windows reports `VirtualizationFirmwareEnabled = False` for the Ryzen 5 5600G. Without it, WSL2 can't start any Linux distro: registering Ubuntu fails with error `0x80370102`, "enable the Virtual Machine Platform Windows feature and ensure virtualization is enabled in the BIOS". The Android emulator also has no hardware acceleration (`emulator -accel-check` says the hypervisor driver isn't installed), so it won't boot either. Changing the BIOS needs a reboot and GUI clicks, so I can't do it myself.
 
-**What I need you to do (about 20 to 30 minutes, mostly downloads):**
+Already done: the Android SDK, the emulator `Medium_Phone_API_37.0` and the licences are all fine. WSL 3.0.1 and the Ubuntu app are installed, but the Ubuntu distro isn't registered yet.
 
-1. Install WSL2 with Ubuntu. Open PowerShell as Administrator and run:
+**What I need you to do (about 10 minutes):**
+
+1. Reboot into the BIOS. Press `Del` (or `F2`) repeatedly while the PC starts up.
+2. Turn on **SVM Mode**. Where it lives depends on the board brand:
+   - MSI: OC > Advanced CPU Configuration > SVM Mode
+   - ASUS: Advanced > CPU Configuration > SVM Mode
+   - Gigabyte: Tweaker > Advanced CPU Settings > SVM Mode
+   - ASRock: Advanced > CPU Configuration > SVM Mode
+
+   Set it to Enabled, then save and exit (usually `F10`).
+3. Back in Windows, open PowerShell **as Administrator** and run these two commands. The first is the Virtual Machine Platform feature WSL2 needs. The second is the Windows Hypervisor Platform feature the Android emulator uses.
    ```
-   wsl --install -d Ubuntu-24.04
+   dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+   dism /online /enable-feature /featurename:HypervisorPlatform /all /norestart
    ```
-   Reboot when it asks. After the reboot, open "Ubuntu" from the Start menu once and create a Linux username and password. Remember the password: I'll never ask for it, but you may need it if a step needs `sudo`.
-2. Finish the Android Studio setup. Open Android Studio, go through the setup wizard with "Standard" install type, and let it download the SDK. Then open More Actions > Virtual Device Manager, create a Pixel device (for example Pixel 8) with a recent x86_64 system image, and start it once to check it boots.
-3. In a normal PowerShell window, run `flutter doctor --android-licenses` and accept the licences (type `y`).
-4. Come back to this Claude session and say "continue".
+4. Reboot once more.
+5. Come back to this Claude session and say "continue". You don't need to open Ubuntu yourself; I'll register it.
 
-Once those are done I can carry on through Phases 2 to 8 without stopping, unless TensorFlow can't use your GPU (see the note under Phase 0).
+After that I can carry on through Phases 2 to 8 without stopping, unless TensorFlow can't use your GPU (see the note under Phase 0).
 
 ---
 
@@ -46,3 +55,12 @@ Once those are done I can carry on through Phases 2 to 8 without stopping, unles
 - Added an MIT `LICENSE` for my code, with a note that the CUB images are not covered, plus a stub README.
 - Ran `git init` and made the first commit. No remote added.
 - Next: Phase 2, once WSL is installed.
+
+## Phase 0b: Environment re-check after your setup (2026-10-23)
+
+- Android: `flutter doctor` is now clean for Android (SDK 36.0.0, licences accepted). The AVD `Medium_Phone_API_37.0` exists.
+- WSL: version 3.0.1 and the Ubuntu Store app (2604.1.75.0) are installed, but no distro is registered because the app was never opened. I tried registering it non-interactively with `ubuntu.exe install --root`, which needs no admin rights. It failed with `0x80370102`.
+- Root cause: `Win32_Processor.VirtualizationFirmwareEnabled = False`, so SVM is disabled in the BIOS. The CPU itself supports it (`VMMonitorModeExtensions = True`, `SecondLevelAddressTranslationExtensions = True`).
+- The emulator is blocked by the same thing: `emulator -accel-check` returns code 6, no hypervisor.
+- Next: once SVM and the two Windows features are on, I'll register Ubuntu, check that `nvidia-smi` works inside WSL, and start Phase 2.
+- Note for later: if I register Ubuntu as root, your first Ubuntu window will open as root. If you want your own Linux user afterwards, run `adduser <name>` inside Ubuntu, then `ubuntu.exe config --default-user <name>` in PowerShell.
