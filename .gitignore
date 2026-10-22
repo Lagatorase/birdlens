@@ -1,0 +1,41 @@
+# Python and the training environment
+training/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Dataset (CUB-200-2011 is for non-commercial research use, so I never commit it)
+training/data/
+CUB_200_2011/
+*.tgz
+*.tar.gz
+
+# Checkpoints, logs and intermediate exports
+training/checkpoints/
+training/logs/*
+!training/logs/.gitkeep
+training/exports/
+*.keras
+*.h5
+
+# Only the final quantised model and labels in the app get committed
+*.tflite
+!app/assets/models/*.tflite
+
+# Flutter and Android build outputs
+app/.dart_tool/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/android/.gradle/
+app/android/local.properties
+app/android/app/release/
+*.apk
+*.aab
+*.iml
+.idea/
+.vscode/
+
+# OS clutter
+.DS_Store
+Thumbs.db
