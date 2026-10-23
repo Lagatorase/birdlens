@@ -61,14 +61,14 @@ def main() -> None:
     ax.plot(thresholds, [r["accuracy_above"] for r in val], label="Accuracy at or above threshold")
     ax.plot(thresholds, [r["coverage"] for r in val], label="Share of photos at or above threshold")
     ax.axvline(chosen["threshold"], color="grey", linestyle="--", linewidth=1)
-    ax.text(chosen["threshold"] + 0.01, 0.05, f"chosen {chosen['threshold']:.2f}", color="grey")
+    ax.text(chosen["threshold"] - 0.01, 0.3, f"chosen {chosen['threshold']:.2f}", color="grey", ha="right")
     ax.set_xlabel("Top-1 confidence threshold")
     ax.set_ylim(0, 1.02)
     ax.set_title(f"Validation set, {args.variant} model")
-    ax.legend(loc="lower left", fontsize=8)
+    ax.legend(loc="lower center", fontsize=8, bbox_to_anchor=(0.5, -0.42), ncol=2, frameon=False)
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(DOCS_DIR / "threshold_curve.png")
+    fig.savefig(DOCS_DIR / "threshold_curve.png", bbox_inches="tight")
 
 
 if __name__ == "__main__":

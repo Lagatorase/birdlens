@@ -1,1 +1,10 @@
-{}
+{
+  "variant": "float16",
+  "model_asset": "assets/models/birdlens.tflite",
+  "labels_asset": "assets/labels.txt",
+  "input_size": 224,
+  "num_classes": 200,
+  "threshold": 0.44,
+  "test_top1": 0.7515,
+  "test_top5": 0.9284
+}

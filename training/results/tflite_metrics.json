@@ -1,0 +1,34 @@
+{
+  "float32": {
+    "file_bytes": 24469580,
+    "input_dtype": "float32",
+    "test_top1": 0.7518122195374526,
+    "test_top5": 0.9283741801863997,
+    "test_macro_f1": 0.7522511361826958,
+    "val_top1": 0.7716666666666666,
+    "test_images": 5794,
+    "python_cpu_seconds_for_test_set": 56.6
+  },
+  "float16": {
+    "file_bytes": 12350408,
+    "input_dtype": "float32",
+    "test_top1": 0.7514670348636521,
+    "test_top5": 0.9283741801863997,
+    "test_macro_f1": 0.7518754491923525,
+    "val_top1": 0.7716666666666666,
+    "test_images": 5794,
+    "python_cpu_seconds_for_test_set": 54.3,
+    "top1_agreement_with_float32": 0.9991370383154988
+  },
+  "int8": {
+    "file_bytes": 7419384,
+    "input_dtype": "uint8",
+    "test_top1": 0.7304107697618226,
+    "test_top5": 0.9233690024162927,
+    "test_macro_f1": 0.7320276918242683,
+    "val_top1": 0.745,
+    "test_images": 5794,
+    "python_cpu_seconds_for_test_set": 32.4,
+    "top1_agreement_with_float32": 0.882119433897135
+  }
+}
