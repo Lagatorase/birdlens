@@ -39,3 +39,6 @@ app/android/app/release/
 # OS clutter
 .DS_Store
 Thumbs.db
+
+# Release APKs for GitHub Releases, not committed
+dist/

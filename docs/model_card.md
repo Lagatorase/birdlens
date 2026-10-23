@@ -30,11 +30,64 @@ Not intended for:
 
 ## Training
 
-<!-- Filled from training/results/train_summary.json and the training logs. -->
+Script: `training/train.py`. Results: `training/results/train_summary.json`, with per-epoch logs in `training/logs/head_history.csv` and `training/logs/finetune_history.csv`.
+
+- Backbone: Keras `EfficientNetV2B0`, ImageNet weights, with its built-in rescaling so the model takes raw 0 to 255 RGB.
+- Head: global average pooling, dropout 0.3, a 200-way softmax.
+- Input: the whole photo resized to 224x224 with bilinear sampling, no crop.
+- Augmentation: a random crop covering 50 to 100 percent of the photo (aspect 3:4 to 4:3), horizontal flip, and mild brightness, contrast, saturation and hue jitter. No vertical flips.
+- Stage 1: backbone frozen, Adam at 1e-3, label smoothing 0.1, batch 16, mixed precision. It stopped early after 8 epochs, with the best validation accuracy of 68.2% at epoch 4.
+- Stage 2: top 40 percent of backbone layers unfrozen (87 layers, batch norm kept frozen), AdamW with cosine decay from 1e-4. It stopped early after 21 epochs, with the best validation accuracy of **77.2%** (top-5 94.3%) at epoch 15.
+- Hardware: RTX 5060 under WSL2, capped at 4000 MiB of VRAM. About 10 minutes of training time in total.
+- The model overfits: training accuracy reached 99% while validation settled around 75 to 77%. With only about 27 training photos per class, that's expected.
 
 ## Evaluation
 
-<!-- Filled from training/results/*.json. -->
+All on the official CUB test split (5,794 images), with each `.tflite` file run through the LiteRT interpreter (`training/evaluate.py`, results in `training/results/tflite_metrics.json`).
+
+| Variant | File size | Top-1 | Top-5 | Macro F1 | Agrees with float32 |
+|---|---|---|---|---|---|
+| float32 | 24.5 MB | 75.2% | 92.8% | 0.752 | (reference) |
+| float16 (shipped) | 12.4 MB | 75.1% | 92.8% | 0.752 | 99.9% |
+| int8 (full integer, uint8 in and out) | 7.4 MB | 73.0% | 92.3% | 0.732 | 88.2% |
+
+The float32 file scores 77.17% on validation, the same as the Keras checkpoint, which suggests the conversion is faithful. Int8 calibration used 300 random training images, preprocessed the same way as inference.
+
+**Confidence threshold** (`training/choose_threshold.py`, `training/results/threshold.json`): the app shows "Not confident" when the top-1 probability is below **0.44**. That's the lowest threshold where predictions at or above it are at least 90% correct on the validation set. On validation it keeps 68.2% of photos at 90.2% accuracy. On the test set, the same threshold keeps 69.0% of photos at 88.1% accuracy, and the photos below it are right only 46.2% of the time.
+
+**Hardest classes** (`training/analyze_errors.py`, `training/results/error_analysis.json`), float16 test accuracy:
+
+| Species | Accuracy | Most common wrong guess |
+|---|---|---|
+| Western Wood Pewee | 13% | Olive-sided Flycatcher |
+| Brewer's Blackbird | 14% | Shiny Cowbird |
+| Common Tern | 17% | Arctic Tern |
+| American Crow | 23% | Fish Crow |
+| California Gull | 30% | Herring Gull |
+| Yellow-bellied Flycatcher | 34% | Acadian Flycatcher |
+| Western Gull | 37% | Herring Gull |
+| Bank Swallow | 40% | Gray Kingbird |
+| Elegant Tern | 40% | Caspian Tern |
+| Least Flycatcher | 45% | Acadian Flycatcher |
+
+**Most confused pairs**, counting mistakes in both directions:
+
+| Pair | Mix-ups |
+|---|---|
+| Long-tailed Jaeger and Pomarine Jaeger | 15 |
+| Philadelphia Vireo and Warbling Vireo | 15 |
+| Brandt's Cormorant and Pelagic Cormorant | 14 |
+| Arctic Tern and Common Tern | 14 |
+| Common Tern and Forster's Tern | 13 |
+| Brewer's Blackbird and Shiny Cowbird | 12 |
+| Acadian Flycatcher and Least Flycatcher | 12 |
+| Herring Gull and Western Gull | 12 |
+| Chuck-will's-widow and Whip-poor-will | 11 |
+| American Crow and Fish Crow | 11 |
+
+These are mostly pairs that birders also find hard from a single photo. `docs/misclassifications.png` shows the most confident mistake from each of the top pairs.
+
+**On-device check**: the app's Dart preprocessing plus tflite_flutter on the Android emulator matches the Python outputs to within 1.2e-6 on lossless inputs, and gives the same top-1 on all JPEG fixtures. Details are in `docs/emulator_results.md`.
 
 ## Known limitations
 

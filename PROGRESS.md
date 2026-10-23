@@ -1,8 +1,32 @@
 # BirdLens progress log
 
-## Status
+## Final summary (2026-10-23)
 
-Work in progress. No action needed from you right now. The ACTION NEEDED about SVM was resolved on 2026-10-23.
+**What was built:** BirdLens, a Flutter Android app that identifies 200 bird species from a photo fully on the device. It uses an EfficientNetV2-B0 model I trained on CUB-200-2011 under WSL2 on the RTX 5060 and shipped as a float16 TFLite file. It has camera and gallery input, top-3 results with confidence bars, a "Not confident" message below 0.44, local scan history with delete, a benchmark screen and an About screen. The training pipeline, evaluation, exports, tests, model card and README are all in the repo, committed phase by phase as Lucas Lee, with no remote.
+
+**Final metrics** (official CUB test set, 5,794 images, each .tflite run through the LiteRT interpreter by `training/evaluate.py`):
+
+| Variant | Size | Top-1 | Top-5 | Macro F1 |
+|---|---|---|---|---|
+| float32 | 24.5 MB | 75.2% | 92.8% | 0.752 |
+| float16 (in the app) | 12.4 MB | 75.1% | 92.8% | 0.752 |
+| int8 | 7.4 MB | 73.0% | 92.3% | 0.732 |
+
+Best validation accuracy was 77.2%. On the emulator, the phone matches Python to within 1.2e-6 on lossless inputs. Average inference was 51 to 57 ms (Android emulator on my desktop PC, not a real phone).
+
+**Tests:** Python 33 passed, Flutter 45 passed, device integration 11 passed, and `flutter analyze` is clean.
+
+**Where the APK is:** `C:\Users\Admin\birdlens\dist\birdlens-1.0.0-arm64-v8a.apk` (for most phones) and `dist\birdlens-1.0.0-universal.apk`. They're gitignored, ready for GitHub Releases.
+
+**Please check by hand:**
+1. **Install the APK on a real phone** and try the camera button. The emulator run only used the gallery, and real-phone speed is untested.
+2. **Fixture and sample images are downsized CUB test photos**: 4 in `app/test/fixtures/images/`, 3 in `app/assets/samples/`, plus the figure `docs/misclassifications.png`. CUB is for non-commercial research. A student portfolio fits that, but if you'd rather have none in a public repo, swap in your own bird photos and rerun `training/prepare_app_assets.py`.
+3. **Replace the GitHub link placeholder** `https://github.com/your-username/birdlens` in `app/lib/screens/about_screen.dart` once you create the repo.
+4. **The release APK is signed with Flutter's debug key.** That's fine for GitHub Releases and sideloading, but create a proper keystore before any Play Store upload.
+5. **Building in a new terminal:** AVG's HTTPS scanning breaks Gradle downloads. Run `. $env:USERPROFILE\.birdlens\android-build-env.ps1` first (see Phase 2), or turn off AVG's HTTPS scanning.
+6. **Disk space:** C: has about 5.6 GB free. The WSL disk holds the dataset, venv and checkpoints. Per-epoch checkpoints in `~/birdlens-work/checkpoints` can be deleted if you need space; `best.keras` is the one that matters. The WSL virtual disk won't shrink on its own, though.
+7. **WSL runs as root.** I registered Ubuntu with `ubuntu.exe install --root` so you didn't have to set up a user. To add your own user, see Phase 0b.
+8. The genus-only CUB class names "Sayornis" and "Geococcyx" are shown as-is. You could rename them to "Phoebe" and "Roadrunner" in `training/birdlens_train/labels.py`.
 
 ---
 
@@ -82,3 +106,56 @@ Work in progress. No action needed from you right now. The ACTION NEEDED about S
 - A bug I caught: the first summary reported 76.25% val accuracy, not the 77.17% Keras logged for the best epoch. Re-scoring the saved `best.keras` and `epoch_15.keras` in a fresh process (`training/scripts/check_checkpoints.py`) gave 77.17% under both float32 and mixed precision. So the weights were fine, and the in-process re-evaluation after training was the problem. `train.py` now clears the Keras session first and gives the same 77.17%.
 - Resumability checked with `training/scripts/resume_test.sh`, which runs in a throwaway folder: I killed a run with `kill -9` during head epoch 3, and the restart continued at "Epoch 3/4" with no duplicate history rows. A rerun after both stages are done skips straight to the summary.
 - Next: export the TFLite variants and evaluate them.
+
+## Phase 4: Evaluation and export (2026-10-23)
+
+- `training/export_tflite.py` rebuilds the model in plain float32 (training used mixed precision), loads the best weights and converts three variants: float32 (24.5 MB), float16 (12.4 MB), and full int8 with uint8 input and output (7.4 MB, calibrated on 300 random training images).
+- `training/evaluate.py` runs every `.tflite` file through the LiteRT interpreter on all 5,794 test images and 600 validation images (`training/results/tflite_metrics.json`):
+  - float32: top-1 **75.18%**, top-5 92.84%, macro F1 0.752. Its val top-1 is 77.17%, identical to the Keras checkpoint, which confirms the conversion and the eval pipeline.
+  - float16: top-1 **75.15%**, top-5 92.84%, macro F1 0.752. Same top-1 answer as float32 on 99.91% of test images.
+  - int8: top-1 **73.04%**, top-5 92.34%, macro F1 0.732. Agrees with float32 on 88.21%. It was about 1.7x faster in Python on the CPU (32.4 s against 54.3 s for the test set).
+- Chose **float16** for the app. It keeps float32 accuracy at half the size. Int8 saves 5 MB more but costs 2.1 points of top-1.
+- Threshold (`training/choose_threshold.py`): **0.44**, the lowest threshold with at least 90% accuracy above it on validation. Validation: 68.2% coverage at 90.2% accuracy. Test, same threshold: 69.0% coverage at 88.1% accuracy, and 46.2% accuracy below it. Chart: `docs/threshold_curve.png`.
+- Error analysis (`training/analyze_errors.py`): the worst classes are Western Wood Pewee (13%), Brewer's Blackbird (14%) and Common Tern (17%). The most confused pairs are jaegers, vireos, cormorants and terns. The grid is `docs/misclassifications.png`, and the full lists are in `training/results/error_analysis.json` and `docs/model_card.md`.
+- `training/prepare_app_assets.py` copies the float16 model, `labels.txt` and `model_config.json` into `app/assets/`, makes 3 benchmark sample photos, and writes the parity fixtures. The fixtures are 4 test images as PNG and JPEG, downsized to 320 px, with the Python preprocessing values and the outputs of every variant. They go in `app/test/fixtures/` and are embedded for the device test in `app/integration_test/fixture_data.dart`.
+- Label cleaning: I checked all 200 cleaned names against `classes.txt` by eye. I fixed the possessives CUB drops (Anna's Hummingbird, Forster's Tern and others), "Whip-poor-will", and CUB's own typo "Artic Tern", which became "Arctic Tern". The genus-only CUB classes "Sayornis" and "Geococcyx" are left as they are.
+- `training/scripts/count_params.py`: 6,175,512 parameters in total (5,919,312 backbone, 256,200 head).
+- `docs/model_card.md` is written: intended use, the dataset licence (Flickr, non-commercial research, not redistributed), metrics, limitations and fairness of the evaluation.
+
+## Phase 6: Testing (2026-10-23)
+
+- Python (`python -m pytest` in `training/`): **33 passed**. They cover label cleaning (including every special case), the official split loading, stratified and deterministic validation split, the real split file sizes (5,994 and 5,794, no overlap, all 200 classes in val), preprocessing (shape, range, greyscale, and a match against my own reference bilinear within 0.02), and the metrics (top-k, confusion matrix, macro F1, confused pairs, threshold table).
+- Flutter (`flutter test`): **45 passed**, with `flutter analyze` reporting no issues. They cover:
+  - Unit tests for preprocessing (bilinear against hand-worked TensorFlow values, decode, greyscale, alpha, bad bytes, quantisation), result parsing, dequantisation, label parsing, the ScanRecord database round trip, benchmark stats and formatting.
+  - Widget tests for the identify screen (loaded, model failed, camera denied, picker cancelled), the result screen (confident, not confident, corrupt image), history (empty, order, delete), benchmark, about and navigation.
+  - Host parity test against the Python fixtures:
+    - PNG: Dart matches Python within 0.02 per value.
+    - JPEG: a mean difference under 2 is allowed, because Dart's JPEG decoder differs from libjpeg-turbo. I measured 1.2 to 1.4 mean and up to 16 at single edge pixels, and the tolerances and the reasons are written in the test.
+- On the emulator (`flutter test integration_test -d emulator-5554`): **11 passed**.
+  - 9 parity tests. PNG fixtures: largest probability difference from Python 5.3e-7 to 1.2e-6. JPEG fixtures: same top-1 on all 4, with a top-1 probability difference of 0.003 to 0.027.
+  - 2 stress tests: 200 inferences in a row, and loading and closing the model twice.
+
+## Phase 7: Emulator, screenshots and release APK (2026-10-23)
+
+- Installed the missing pieces with `sdkmanager` through the AVG-aware trust store: NDK 28.2, and the Android 37 x86_64 Play system image. The image folder had been left empty by the Android Studio setup.
+- Disk: C: had only about 10.7 GB free and the AVD wanted a 12 GB data partition. I launched it with `-partition-size 2047`, a launch flag only, so your AVD config is unchanged. Free space later fell to 2.8 GB. `flutter clean` freed 2 GB of my own build output, leaving about 5.6 GB.
+- Pushed 5 CUB test photos to `/sdcard/Pictures/BirdLens` and ran a media scan. They were chosen by `training/scripts/pick_demo_images.py`: 4 confidently correct ones plus 1 real low-confidence case, a Black-footed Albatross guessed as Sooty Albatross at 19%. I drove the app with `adb shell input` and checked every screenshot myself.
+- UI fixes from looking at the screenshots:
+  - Removed the grey bars around the photo on the result screen.
+  - Shortened history timestamps so lines don't wrap.
+  - Sizes now use decimal MB to match the README.
+  - Made the benchmark caption accurate.
+  - Updated the About screen's look-alike examples to match the real error analysis.
+- **A real bug found on the device:** one benchmark run failed with "Unsupported output type noType". tflite_flutter's `IsolateInterpreter` shares one native interpreter between two isolates and re-allocates its tensors every call, while my code read tensor details on the main isolate. Moving the interpreter into my own worker isolate (`app/lib/services/inference_worker.dart`) uncovered the root cause: tensor handles fetched before the first `invoke()` go stale on this runtime. I saw a 0-byte input and a SIGSEGV in `TfLiteTensorCopyToBuffer` on a null buffer. A small on-device probe confirmed that fresh handles each call work in every setup. The worker now fetches tensors fresh every call, and a 200-run stress test guards it.
+- Checked by hand on the emulator: gallery pick, top-3 bars, the not-confident banner, saving to history, history surviving force-stop and reinstall, delete with confirmation, the benchmark, and the About screen. The camera button wasn't exercised, because the emulator's camera needs a GUI. The denied-camera dialog is covered by a widget test only.
+- Benchmark, labelled **Android emulator on my desktop PC, not a real phone**, 3 cold starts (`docs/emulator_results.md`): warm-up 511.4, 441.2 and 433.1 ms. Average 50.6, 57.3 and 53.6 ms. p95 61.3, 88.3 and 66.3 ms.
+- Screenshots: `docs/screenshots/1_home.png` to `6_about.png`, downsized to 540x1200.
+- Release APKs: `dist/birdlens-1.0.0-arm64-v8a.apk` (37.2 MB) and `dist/birdlens-1.0.0-universal.apk` (84.1 MB). Both are gitignored, for you to upload to GitHub Releases. SHA-256 checksums:
+  - arm64-v8a: `83454334991bb57316bffa89e8e179fc94052c92e2bbf814469330c0dc639f48`
+  - universal: `c98aed0cfae746469c6992f2b0b4f3f3bfa2fd3604eb4794e4289b139419ddf2`
+- The emulator was shut down afterwards to give your PC its memory back. While it was running, WSL briefly refused to start ("insufficient system resources").
+
+## Phase 8: README (2026-10-23)
+
+- `README.md`: the one-line summary, a screenshot row, the problem and what the app does, the results table, how it works with a Mermaid diagram (data, model choice, training, quantisation, on-device inference, parity, threshold), evaluation with the confusion highlights and misclassification grid, limitations, what I'd do next, setup for training and the app, Releases, and the author. Every number names the script or file it came from.
+- Checked the README, docs and code comments: no em dashes, none of the listed AI-sounding words, and no all-caps emphasis in comments (only acronyms like JPEG and EXIF).
