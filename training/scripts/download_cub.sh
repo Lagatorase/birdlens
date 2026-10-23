@@ -15,7 +15,10 @@ cd "$DATA_DIR"
 # I skip the download if a verified archive is already here.
 if [ ! -f CUB_200_2011.tgz ] || ! echo "$MD5  CUB_200_2011.tgz" | md5sum -c --quiet; then
   # I resume partial downloads with -C - in case the connection drops.
-  curl -L --fail --retry 5 -C - -o CUB_200_2011.tgz "$URL"
+  # The server sometimes stalls at a few KB/s, so I abort when it stays under
+  # 50 KB/s for a minute and let --retry pick up from the same byte.
+  curl -L --fail -C - --retry 30 --retry-all-errors --retry-delay 5 \
+    --speed-limit 50000 --speed-time 60 -o CUB_200_2011.tgz "$URL"
   echo "$MD5  CUB_200_2011.tgz" | md5sum -c
 fi
 
