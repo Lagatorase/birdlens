@@ -23,6 +23,8 @@ from birdlens_train.labels import clean_label
         ("067.Anna_Hummingbird", "Anna's Hummingbird"),
         ("126.Nelson_Sharp_tailed_Sparrow", "Nelson's Sharp-tailed Sparrow"),
         ("146.Forsters_Tern", "Forster's Tern"),
+        ("105.Whip_poor_Will", "Whip-poor-will"),
+        ("141.Artic_Tern", "Arctic Tern"),
     ],
 )
 def test_clean_label(raw, expected):

@@ -24,6 +24,10 @@ _SPECIAL_CASES = {
     "Swainson_Warbler": "Swainson's Warbler",
     "Wilson_Warbler": "Wilson's Warbler",
     "Bewick_Wren": "Bewick's Wren",
+    # Two more fixes: a hyphenated name with a capital in the middle, and a
+    # spelling mistake in the original folder name.
+    "Whip_poor_Will": "Whip-poor-will",
+    "Artic_Tern": "Arctic Tern",
 }
 
 
