@@ -4,8 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_services.dart';
 import '../utils/formatting.dart';
 
-/// Placeholder until the repo is public.
-const repoUrl = 'https://github.com/your-username/birdlens';
+/// Where the source code lives.
+const repoUrl = 'https://github.com/Lagatorase/birdlens';
 
 /// What the model is, how well it does, and where it falls short.
 class AboutScreen extends StatelessWidget {

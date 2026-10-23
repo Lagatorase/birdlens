@@ -2,7 +2,7 @@
 
 ## Final summary (2026-10-23)
 
-**What was built:** BirdLens, a Flutter Android app that identifies 200 bird species from a photo fully on the device. It uses an EfficientNetV2-B0 model I trained on CUB-200-2011 under WSL2 on the RTX 5060 and shipped as a float16 TFLite file. It has camera and gallery input, top-3 results with confidence bars, a "Not confident" message below 0.44, local scan history with delete, a benchmark screen and an About screen. The training pipeline, evaluation, exports, tests, model card and README are all in the repo, committed phase by phase as Lucas Lee, with no remote.
+**What was built:** BirdLens, a Flutter Android app that identifies 200 bird species from a photo fully on the device. It uses an EfficientNetV2-B0 model I trained on CUB-200-2011 under WSL2 on the RTX 5060 and shipped as a float16 TFLite file. It has camera and gallery input, top-3 results with confidence bars, a "Not confident" message below 0.44, local scan history with delete, a benchmark screen and an About screen. The training pipeline, evaluation, exports, tests, model card and README are all in the repo, committed phase by phase as Lucas Lee and pushed to https://github.com/Lagatorase/birdlens.
 
 **Final metrics** (official CUB test set, 5,794 images, each .tflite run through the LiteRT interpreter by `training/evaluate.py`):
 
@@ -16,12 +16,12 @@ Best validation accuracy was 77.2%. On the emulator, the phone matches Python to
 
 **Tests:** Python 33 passed, Flutter 45 passed, device integration 11 passed, and `flutter analyze` is clean.
 
-**Where the APK is:** `C:\Users\Admin\birdlens\dist\birdlens-1.0.0-arm64-v8a.apk` (for most phones) and `dist\birdlens-1.0.0-universal.apk`. They're gitignored, ready for GitHub Releases.
+**Where the APK is:** `C:\Users\Admin\birdlens\dist\birdlens-1.0.0-arm64-v8a.apk` (for most phones) and `dist\birdlens-1.0.0-universal.apk`. They're gitignored in the repo and attached to the v1.0.0 GitHub Release.
 
 **Please check by hand:**
 1. **Install the APK on a real phone** and try the camera button. The emulator run only used the gallery, and real-phone speed is untested.
 2. **Fixture and sample images are downsized CUB test photos**: 4 in `app/test/fixtures/images/`, 3 in `app/assets/samples/`, plus the figure `docs/misclassifications.png`. CUB is for non-commercial research. A student portfolio fits that, but if you'd rather have none in a public repo, swap in your own bird photos and rerun `training/prepare_app_assets.py`.
-3. **Replace the GitHub link placeholder** `https://github.com/your-username/birdlens` in `app/lib/screens/about_screen.dart` once you create the repo.
+3. ~~Replace the GitHub link placeholder~~ Done: the About screen now links to https://github.com/Lagatorase/birdlens, and the APKs were rebuilt with it.
 4. **The release APK is signed with Flutter's debug key.** That's fine for GitHub Releases and sideloading, but create a proper keystore before any Play Store upload.
 5. **Building in a new terminal:** AVG's HTTPS scanning breaks Gradle downloads. Run `. $env:USERPROFILE\.birdlens\android-build-env.ps1` first (see Phase 2), or turn off AVG's HTTPS scanning.
 6. **Disk space:** C: has about 5.6 GB free. The WSL disk holds the dataset, venv and checkpoints. Per-epoch checkpoints in `~/birdlens-work/checkpoints` can be deleted if you need space; `best.keras` is the one that matters. The WSL virtual disk won't shrink on its own, though.
@@ -151,8 +151,8 @@ Best validation accuracy was 77.2%. On the emulator, the phone matches Python to
 - Benchmark, labelled **Android emulator on my desktop PC, not a real phone**, 3 cold starts (`docs/emulator_results.md`): warm-up 511.4, 441.2 and 433.1 ms. Average 50.6, 57.3 and 53.6 ms. p95 61.3, 88.3 and 66.3 ms.
 - Screenshots: `docs/screenshots/1_home.png` to `6_about.png`, downsized to 540x1200.
 - Release APKs: `dist/birdlens-1.0.0-arm64-v8a.apk` (37.2 MB) and `dist/birdlens-1.0.0-universal.apk` (84.1 MB). Both are gitignored, for you to upload to GitHub Releases. SHA-256 checksums:
-  - arm64-v8a: `83454334991bb57316bffa89e8e179fc94052c92e2bbf814469330c0dc639f48`
-  - universal: `c98aed0cfae746469c6992f2b0b4f3f3bfa2fd3604eb4794e4289b139419ddf2`
+  - arm64-v8a: `d3e5dcd34405eeb0346bb461e7e00db48cb210c3ef9214e63318f0a0cbca1029`
+  - universal: `47883e9be127321be41e0cf52a7fe03bdb264e9de2322f68a71a92d1c32ccb94`
 - The emulator was shut down afterwards to give your PC its memory back. While it was running, WSL briefly refused to start ("insufficient system resources").
 
 ## Phase 8: README (2026-10-23)
