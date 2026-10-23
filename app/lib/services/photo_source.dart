@@ -1,23 +1,17 @@
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 enum PhotoOrigin { camera, gallery }
 
 /// Thrown when the user has blocked camera access.
 class PhotoPermissionDenied implements Exception {
-  const PhotoPermissionDenied({required this.permanently});
-
-  /// True when Android won't show the prompt again and only Settings can fix it.
-  final bool permanently;
+  const PhotoPermissionDenied();
 }
 
 /// Gets photo bytes from the camera or gallery. Widget tests use a fake.
 abstract class PhotoSource {
   /// Returns null when the user backs out without choosing a photo.
   Future<Uint8List?> pick(PhotoOrigin origin);
-
-  Future<void> openSettings();
 }
 
 class ImagePickerPhotoSource implements PhotoSource {
@@ -32,15 +26,9 @@ class ImagePickerPhotoSource implements PhotoSource {
 
   @override
   Future<Uint8List?> pick(PhotoOrigin origin) async {
-    if (origin == PhotoOrigin.camera) {
-      // I check the camera permission myself so I can explain a denial
-      // instead of failing silently.
-      final status = await Permission.camera.request();
-      if (!status.isGranted) {
-        throw PhotoPermissionDenied(permanently: status.isPermanentlyDenied);
-      }
-    }
     try {
+      // Because the manifest declares CAMERA, image_picker asks for the
+      // permission itself before opening the camera.
       final file = await _picker.pickImage(
         source: origin == PhotoOrigin.camera ? ImageSource.camera : ImageSource.gallery,
         maxWidth: maxDimension,
@@ -49,14 +37,12 @@ class ImagePickerPhotoSource implements PhotoSource {
       );
       return file == null ? null : await file.readAsBytes();
     } on PlatformException catch (e) {
-      // image_picker reports a denied camera with this code.
+      // image_picker reports a denied camera with this code, which I turn
+      // into my own exception so the screen can explain what happened.
       if (e.code == 'camera_access_denied') {
-        throw const PhotoPermissionDenied(permanently: false);
+        throw const PhotoPermissionDenied();
       }
       rethrow;
     }
   }
-
-  @override
-  Future<void> openSettings() => openAppSettings();
 }

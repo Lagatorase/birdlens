@@ -1,30 +1,8 @@
 # BirdLens progress log
 
-## ACTION NEEDED
+## Status
 
-**Reason:** CPU virtualization (AMD SVM) is turned off in the BIOS. Windows reports `VirtualizationFirmwareEnabled = False` for the Ryzen 5 5600G. Without it, WSL2 can't start any Linux distro: registering Ubuntu fails with error `0x80370102`, "enable the Virtual Machine Platform Windows feature and ensure virtualization is enabled in the BIOS". The Android emulator also has no hardware acceleration (`emulator -accel-check` says the hypervisor driver isn't installed), so it won't boot either. Changing the BIOS needs a reboot and GUI clicks, so I can't do it myself.
-
-Already done: the Android SDK, the emulator `Medium_Phone_API_37.0` and the licences are all fine. WSL 3.0.1 and the Ubuntu app are installed, but the Ubuntu distro isn't registered yet.
-
-**What I need you to do (about 10 minutes):**
-
-1. Reboot into the BIOS. Press `Del` (or `F2`) repeatedly while the PC starts up.
-2. Turn on **SVM Mode**. Where it lives depends on the board brand:
-   - MSI: OC > Advanced CPU Configuration > SVM Mode
-   - ASUS: Advanced > CPU Configuration > SVM Mode
-   - Gigabyte: Tweaker > Advanced CPU Settings > SVM Mode
-   - ASRock: Advanced > CPU Configuration > SVM Mode
-
-   Set it to Enabled, then save and exit (usually `F10`).
-3. Back in Windows, open PowerShell **as Administrator** and run these two commands. The first is the Virtual Machine Platform feature WSL2 needs. The second is the Windows Hypervisor Platform feature the Android emulator uses.
-   ```
-   dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-   dism /online /enable-feature /featurename:HypervisorPlatform /all /norestart
-   ```
-4. Reboot once more.
-5. Come back to this Claude session and say "continue". You don't need to open Ubuntu yourself; I'll register it.
-
-After that I can carry on through Phases 2 to 8 without stopping, unless TensorFlow can't use your GPU (see the note under Phase 0).
+Work in progress. No action needed from you right now. The ACTION NEEDED about SVM was resolved on 2026-10-23.
 
 ---
 
@@ -46,7 +24,7 @@ After that I can carry on through Phases 2 to 8 without stopping, unless TensorF
 - Commits are authored as Lucas Lee with no AI co-author trailer.
 - The emulator can be started at any time during Phase 7.
 - The benchmark label reads "Android emulator on my desktop PC, not a real phone".
-- Ubuntu 24.04 ships Python 3.12, so I'll get Python 3.11 through `uv` without needing sudo.
+- Ubuntu ships a newer Python than 3.11, so I get Python 3.11 through `uv` without needing sudo.
 
 ## Phase 1: Repo setup (2026-10-23)
 
@@ -64,3 +42,19 @@ After that I can carry on through Phases 2 to 8 without stopping, unless TensorF
 - The emulator is blocked by the same thing: `emulator -accel-check` returns code 6, no hypervisor.
 - Next: once SVM and the two Windows features are on, I'll register Ubuntu, check that `nvidia-smi` works inside WSL, and start Phase 2.
 - Note for later: if I register Ubuntu as root, your first Ubuntu window will open as root. If you want your own Linux user afterwards, run `adduser <name>` inside Ubuntu, then `ubuntu.exe config --default-user <name>` in PowerShell.
+
+## Phase 0c: WSL up and GPU check (2026-10-23)
+
+- After you enabled SVM: `VirtualizationFirmwareEnabled = True`. I registered the Ubuntu app with `ubuntu.exe install --root`, which needed no admin rights. It came up as **Ubuntu 26.04.1 LTS** under WSL2.
+- `nvidia-smi` inside WSL: **NVIDIA GeForce RTX 5060, 8151 MiB**, driver 591.44, CUDA 13.1 driver API. WSL has 12 CPU threads and about 7 GB RAM.
+- The emulator now reports `WHPX(10.0.19045) is installed and usable`.
+- Midway through, WSL auto-updated itself. For a few minutes `wsl` failed with `ERROR_SERVICE_DISABLED` and `ERROR_INSTALL_ALREADY_RUNNING`, which killed my dataset download. It recovered without any action from me, and the venv and partial download survived.
+
+## Phase 2: Training environment and data (2026-10-23)
+
+- Python 3.11.17 venv built with `uv` at `~/birdlens-work/.venv` and symlinked to `training/.venv` (`training/scripts/setup_env.sh`).
+- TensorFlow: I checked PyPI rather than guessing. **TF 2.21.0** is the newest stable release (2026-03-06, with 2.22 still at rc0) and has cp311 wheels. `tensorflow[and-cuda]==2.21.0` pulls the CUDA 12.9 and cuDNN 9.27 pip wheels. I tested `tf.lite.TFLiteConverter.from_keras_model` on a Keras 3.15.1 model before committing to this version, and it works. `tf.lite.Interpreter` prints a deprecation warning, so evaluation uses `ai-edge-litert==2.3.0` instead. Exact pins are in `training/requirements.txt`, and the full resolved set is in `training/requirements.lock.txt`.
+- GPU problem 1, fixed: TF couldn't `dlopen libcusolver.so.11` even though the pip wheel ships it. Fix: `training/scripts/env.sh` puts every `nvidia/*/lib` folder from the venv on `LD_LIBRARY_PATH`. Every training command sources it.
+- GPU problem 2, worked around: TF 2.21 has no prebuilt kernels for compute capability 12.0 (Blackwell). It warns and JIT-compiles from PTX. I raised `CUDA_CACHE_MAXSIZE` so the JIT cache persists between runs. Smoke test (`training/scripts/gpu_check.py`): EfficientNetV2-B0, batch 16, mixed precision, 10 train steps in 0.27 s, peak 402 MiB with the 4000 MiB cap active.
+- Dataset: the official CaltechDATA record 65de6-vp158, `CUB_200_2011.tgz`, MD5 `97eceeb196236b17998738112f37df78` (`training/scripts/download_cub.sh`). The server is slow and sometimes stalls at a few KB/s, so the script now aborts and resumes whenever the speed stays under 50 KB/s for a minute. Note: the CaltechDATA page lists the record licence as "cc-by", but the images themselves come from Flickr, and the dataset's own terms are non-commercial research use. The model card says this.
+- Android build blocker, worked around: the first `flutter build apk` failed downloading Gradle with `PKIX path building failed`. The cause is **AVG Antivirus HTTPS scanning**. On Windows, the certificate for `services.gradle.org` is issued by "AVG Web/Mail Shield Root", which Windows trusts but Android Studio's bundled Java (JBR 25) does not. WSL isn't affected. The JBR also lacks the `Windows-ROOT` store provider, so pointing Java at the Windows certificate store failed too. Fix: I exported the AVG root certificate from Windows (a read-only step, no admin) and built `C:\Users\Admin\.birdlens\truststore.p12`, which is a copy of JBR's `cacerts` plus that one certificate. My build commands point Java at it through `JAVA_TOOL_OPTIONS`. Nothing in AVG, Java or Windows was changed. **When you build in a new PowerShell window, first run** `. $env:USERPROFILE\.birdlens\android-build-env.ps1`, or turn off HTTPS scanning in AVG yourself if you prefer.

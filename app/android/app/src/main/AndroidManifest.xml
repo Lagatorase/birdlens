@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- I request the camera at runtime before taking a photo. -->
+    <!-- image_picker asks for this at runtime before opening the camera. -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- The camera is optional so the app still installs on devices without one. -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>

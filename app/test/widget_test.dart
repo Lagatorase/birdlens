@@ -33,16 +33,17 @@ void main() {
       expect(find.text('Try again'), findsOneWidget);
     });
 
-    testWidgets('explains a permanently denied camera and offers settings', (tester) async {
-      final photos = FakePhotoSource(error: const PhotoPermissionDenied(permanently: true));
+    testWidgets('explains a denied camera permission', (tester) async {
+      final photos = FakePhotoSource(error: const PhotoPermissionDenied());
       await tester.pumpWidget(withServices(const IdentifyScreen(), photos: photos));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Take a photo'));
       await tester.pumpAndSettle();
       expect(find.text('Camera access is off'), findsOneWidget);
-      await tester.tap(find.text('Open settings'));
+      expect(find.textContaining('Settings > Apps > BirdLens'), findsOneWidget);
+      await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
-      expect(photos.openedSettings, isTrue);
+      expect(find.text('Camera access is off'), findsNothing);
     });
 
     testWidgets('does nothing when the user cancels the picker', (tester) async {

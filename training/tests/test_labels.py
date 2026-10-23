@@ -13,10 +13,16 @@ from birdlens_train.labels import clean_label
         ("101.White_Pelican", "White Pelican"),
         ("190.Red_cockaded_Woodpecker", "Red-cockaded Woodpecker"),
         ("200.Common_Yellowthroat", "Common Yellowthroat"),
-        # These two need the special-case table.
-        ("022.Chuck_will_Widow", "Chuck-will's-widow"),
         ("024.Red_faced_Cormorant", "Red-faced Cormorant"),
+        # Hyphen chains with several lowercase parts.
+        ("159.Black_and_white_Warbler", "Black-and-white Warbler"),
+        ("163.Cape_May_Warbler", "Cape May Warbler"),
+        # These need the special-case table for the missing apostrophe.
+        ("022.Chuck_will_Widow", "Chuck-will's-widow"),
         ("023.Brandt_Cormorant", "Brandt's Cormorant"),
+        ("067.Anna_Hummingbird", "Anna's Hummingbird"),
+        ("126.Nelson_Sharp_tailed_Sparrow", "Nelson's Sharp-tailed Sparrow"),
+        ("146.Forsters_Tern", "Forster's Tern"),
     ],
 )
 def test_clean_label(raw, expected):

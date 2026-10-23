@@ -56,16 +56,12 @@ class FakePhotoSource implements PhotoSource {
   FakePhotoSource({this.bytes, this.error});
   final Uint8List? bytes;
   final Object? error;
-  bool openedSettings = false;
 
   @override
   Future<Uint8List?> pick(PhotoOrigin origin) async {
     if (error != null) throw error!;
     return bytes;
   }
-
-  @override
-  Future<void> openSettings() async => openedSettings = true;
 }
 
 class FakeImageStore implements ImageStore {

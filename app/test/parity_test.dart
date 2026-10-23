@@ -24,7 +24,7 @@ void main() {
     final name = fixture['name'] as String;
     final inputs = fixture['inputs'] as Map<String, dynamic>;
 
-    test('$name.png: Dart preprocessing matches Python exactly', () {
+    test('$name.png: Dart preprocessing matches Python within rounding', () {
       // PNG is lossless, so both sides start from identical pixels and only
       // the resize can differ. TensorFlow computes sample positions in float32
       // and Dart in float64, which moves values by about 0.01 at most.

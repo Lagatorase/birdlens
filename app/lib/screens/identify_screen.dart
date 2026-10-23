@@ -53,9 +53,9 @@ class _PickPhoto extends StatelessWidget {
       await navigator.push(MaterialPageRoute<void>(
         builder: (_) => ResultScreen(imageBytes: bytes),
       ));
-    } on PhotoPermissionDenied catch (e) {
+    } on PhotoPermissionDenied {
       if (!context.mounted) return;
-      await _explainDenied(context, e, services.photos);
+      await _explainDenied(context);
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('Could not open that photo. ($e)')),
@@ -63,31 +63,22 @@ class _PickPhoto extends StatelessWidget {
     }
   }
 
-  Future<void> _explainDenied(
-      BuildContext context, PhotoPermissionDenied e, PhotoSource photos) {
+  Future<void> _explainDenied(BuildContext context) {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.no_photography_outlined),
         title: const Text('Camera access is off'),
-        content: Text(e.permanently
-            ? 'BirdLens needs the camera to take a photo. You can turn it on in '
-                'Settings, or choose a photo from your gallery instead.'
-            : 'BirdLens needs the camera to take a photo. You can allow it next '
-                'time, or choose a photo from your gallery instead.'),
+        content: const Text(
+          'BirdLens needs the camera to take a photo. You can allow it next time '
+          'you tap "Take a photo", or turn it on in Settings > Apps > BirdLens > '
+          'Permissions. Choosing a photo from your gallery works without it.',
+        ),
         actions: [
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Not now'),
+            child: const Text('OK'),
           ),
-          if (e.permanently)
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context);
-                photos.openSettings();
-              },
-              child: const Text('Open settings'),
-            ),
         ],
       ),
     );
