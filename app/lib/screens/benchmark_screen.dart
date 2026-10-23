@@ -103,8 +103,9 @@ class _BenchmarkScreenState extends State<BenchmarkScreen> {
               ],
               const SizedBox(height: 12),
               Text(
-                'These timings depend on the device. They cover the model only, '
-                'not decoding or resizing the photo, and will differ on other phones.',
+                'These timings depend on the device and will differ on other phones. '
+                'They measure the TFLite interpreter running the model, not '
+                'decoding or resizing the photo.',
                 style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],

@@ -36,7 +36,7 @@ class FakeClassifier implements Classifier {
   @override
   List<String> get labels => fakeLabels;
   @override
-  int get modelBytes => 12 * 1024 * 1024;
+  int get modelBytes => 12000000;
 
   @override
   Future<ClassificationResult> classifyBytes(Uint8List imageBytes) async {

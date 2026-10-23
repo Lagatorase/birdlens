@@ -7,6 +7,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 import '../models/model_info.dart';
 import '../models/prediction.dart';
+import 'inference_worker.dart';
 import 'preprocessing.dart';
 import 'result_parser.dart';
 
@@ -30,17 +31,17 @@ abstract class Classifier {
   /// Decode, preprocess and classify one photo.
   Future<ClassificationResult> classifyBytes(Uint8List imageBytes);
 
-  /// Run the model on an already preprocessed image and return the time it
-  /// took, for the benchmark screen.
+  /// Run the model on an already preprocessed image and return how long the
+  /// interpreter's invoke call took, for the benchmark screen.
   Future<Duration> timeInference(Float32List input);
 
   Future<void> close();
 }
 
-/// The real classifier, running the bundled TFLite model with tflite_flutter.
+/// The real classifier: the bundled TFLite model running in a background
+/// isolate through tflite_flutter.
 class TfliteClassifier implements Classifier {
-  TfliteClassifier._(this.info, this.labels, this.modelBytes, this._interpreter,
-      this._isolate);
+  TfliteClassifier._(this.info, this.labels, this.modelBytes, this._worker);
 
   @override
   final ModelInfo info;
@@ -48,8 +49,7 @@ class TfliteClassifier implements Classifier {
   final List<String> labels;
   @override
   final int modelBytes;
-  final Interpreter _interpreter;
-  final IsolateInterpreter _isolate;
+  final InferenceWorker _worker;
 
   static const configAsset = 'assets/model_config.json';
 
@@ -69,20 +69,23 @@ class TfliteClassifier implements Classifier {
       final buffer = modelData.buffer
           .asUint8List(modelData.offsetInBytes, modelData.lengthInBytes);
       // Four threads is a fair default for mid-range phones.
-      final interpreter =
-          Interpreter.fromBuffer(buffer, options: InterpreterOptions()..threads = 4);
-      // I check the model's input matches the size in the config, so a wrong
-      // export fails here instead of giving silent garbage later.
-      final shape = interpreter.getInputTensor(0).shape;
+      final worker = await InferenceWorker.start(buffer, threads: 4);
+      // I check the model's input matches the config, so a wrong export fails
+      // here instead of giving silent garbage later.
+      final shape = worker.input.shape;
       if (shape.length != 4 ||
           shape[1] != config.inputSize ||
           shape[2] != config.inputSize ||
           shape[3] != 3) {
+        await worker.close();
         throw ModelLoadException('Unexpected model input shape $shape.');
       }
-      // Inference runs in a background isolate so the UI never freezes.
-      final isolate = await IsolateInterpreter.create(address: interpreter.address);
-      return TfliteClassifier._(config, labels, buffer.length, interpreter, isolate);
+      if (worker.output.shape.last != labels.length) {
+        await worker.close();
+        throw ModelLoadException(
+            'Model has ${worker.output.shape.last} outputs but there are ${labels.length} labels.');
+      }
+      return TfliteClassifier._(config, labels, buffer.length, worker);
     } on ModelLoadException {
       rethrow;
     } catch (e) {
@@ -90,53 +93,45 @@ class TfliteClassifier implements Classifier {
     }
   }
 
-  // IsolateInterpreter quietly skips a run if one is already in flight, so I
-  // chain every call onto this future to run them one at a time.
-  Future<void> _queue = Future.value();
+  /// Run the model on HWC float pixels and return the class probabilities.
+  Future<List<double>> runProbabilities(Float32List pixels) async =>
+      (await _run(pixels)).probabilities;
 
-  /// Run inference on HWC float pixels and return the class probabilities.
-  Future<List<double>> runProbabilities(Float32List pixels) {
-    final result = _queue.then((_) => _runOnce(pixels));
-    // I keep the queue going even if this run throws.
-    _queue = result.then((_) {}, onError: (_) {});
-    return result;
-  }
-
-  Future<List<double>> _runOnce(Float32List pixels) async {
-    final inputTensor = _interpreter.getInputTensor(0);
-    final outputTensor = _interpreter.getOutputTensor(0);
-    // I pass raw bytes in the type this model variant expects. tflite_flutter
-    // copies a Uint8List straight into the tensor without reshaping.
-    final Uint8List input;
-    switch (inputTensor.type) {
+  Future<({List<double> probabilities, Duration invokeTime})> _run(Float32List pixels) async {
+    final input = _worker.input;
+    // I convert the pixels to the bytes this model variant expects.
+    final Uint8List bytes;
+    switch (input.type) {
       case TensorType.float32:
-        input = pixels.buffer.asUint8List(pixels.offsetInBytes, pixels.lengthInBytes);
+        bytes = pixels.buffer.asUint8List(pixels.offsetInBytes, pixels.lengthInBytes);
       case TensorType.uint8:
-        final q = inputTensor.params;
-        input = quantize(pixels, q.scale, q.zeroPoint, signed: false) as Uint8List;
+        bytes = quantize(pixels, input.scale, input.zeroPoint, signed: false) as Uint8List;
       case TensorType.int8:
-        final q = inputTensor.params;
-        final signed = quantize(pixels, q.scale, q.zeroPoint, signed: true) as Int8List;
-        input = signed.buffer.asUint8List();
+        final signed = quantize(pixels, input.scale, input.zeroPoint, signed: true) as Int8List;
+        bytes = signed.buffer.asUint8List();
       default:
-        throw ModelLoadException('Unsupported input type ${inputTensor.type}.');
+        throw ModelLoadException('Unsupported input type ${input.type}.');
     }
-    // The isolate copies the output into a ByteBuffer, which I then read in
-    // the output tensor's own type.
-    final output = ByteData(outputTensor.numBytes()).buffer;
-    await _isolate.run(input, output);
-    switch (outputTensor.type) {
+    final result = await _worker.run(bytes);
+    // Then I read the output bytes back in the output tensor's own type.
+    final out = _worker.output;
+    final raw = result.bytes;
+    final List<double> probabilities;
+    switch (out.type) {
       case TensorType.float32:
-        return output.asFloat32List().toList();
+        // I copy into an aligned buffer because the bytes may not start on a
+        // 4-byte boundary.
+        probabilities = Float32List.fromList(
+                Uint8List.fromList(raw).buffer.asFloat32List())
+            .toList();
       case TensorType.uint8:
-        final q = outputTensor.params;
-        return dequantize(output.asUint8List(), q.scale, q.zeroPoint);
+        probabilities = dequantize(raw, out.scale, out.zeroPoint);
       case TensorType.int8:
-        final q = outputTensor.params;
-        return dequantize(output.asInt8List(), q.scale, q.zeroPoint);
+        probabilities = dequantize(Int8List.fromList(raw), out.scale, out.zeroPoint);
       default:
-        throw ModelLoadException('Unsupported output type ${outputTensor.type}.');
+        throw ModelLoadException('Unsupported output type ${out.type}.');
     }
+    return (probabilities: probabilities, invokeTime: result.invokeTime);
   }
 
   @override
@@ -144,24 +139,14 @@ class TfliteClassifier implements Classifier {
     final size = info.inputSize;
     // Decoding and resizing a photo takes a moment, so it runs off the UI thread.
     final pixels = await Isolate.run(() => preprocessBytes(imageBytes, size));
-    final watch = Stopwatch()..start();
-    final probabilities = await runProbabilities(pixels);
-    watch.stop();
-    return parseResult(probabilities, labels,
-        threshold: info.threshold, inferenceTime: watch.elapsed);
+    final result = await _run(pixels);
+    return parseResult(result.probabilities, labels,
+        threshold: info.threshold, inferenceTime: result.invokeTime);
   }
 
   @override
-  Future<Duration> timeInference(Float32List input) async {
-    final watch = Stopwatch()..start();
-    await runProbabilities(input);
-    watch.stop();
-    return watch.elapsed;
-  }
+  Future<Duration> timeInference(Float32List input) async => (await _run(input)).invokeTime;
 
   @override
-  Future<void> close() async {
-    await _isolate.close();
-    _interpreter.close();
-  }
+  Future<void> close() => _worker.close();
 }

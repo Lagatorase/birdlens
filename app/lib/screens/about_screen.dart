@@ -40,8 +40,9 @@ class AboutScreen extends StatelessWidget {
             body: '• It only knows 200 species, mostly North American. Any other bird gets '
                 'matched to the closest of those 200.\n'
                 '• Blurry, distant or partly hidden birds are often misidentified.\n'
-                '• Some species pairs look almost the same, such as certain gulls, '
-                'flycatchers and sparrows, and it mixes them up.\n'
+                '• Some species look almost the same, and it mixes them up most often. '
+                'On the test set, the worst were terns, gulls, flycatchers, vireos '
+                'and jaegers.\n'
                 '• The confidence score is the model\'s own estimate. It can still be '
                 'confidently wrong.',
           ),

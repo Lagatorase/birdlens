@@ -177,12 +177,14 @@ class _Photo extends StatelessWidget {
     final image = bytes != null
         ? Image.memory(bytes!, fit: BoxFit.contain, errorBuilder: broken)
         : Image.file(File(path!), fit: BoxFit.contain, errorBuilder: broken);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        color: scheme.surfaceContainerHighest,
-        constraints: const BoxConstraints(maxHeight: 320),
-        child: Center(child: image),
+    // I round the photo itself rather than boxing it, so wide shots don't
+    // get grey bars above and below.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 360),
+      // heightFactor 1 makes the box only as tall as the photo.
+      child: Align(
+        heightFactor: 1,
+        child: ClipRRect(borderRadius: BorderRadius.circular(16), child: image),
       ),
     );
   }

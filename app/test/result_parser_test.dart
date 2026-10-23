@@ -2,6 +2,7 @@ import 'package:birdlens/models/prediction.dart';
 import 'package:birdlens/models/scan_record.dart';
 import 'package:birdlens/services/benchmark.dart';
 import 'package:birdlens/services/result_parser.dart';
+import 'package:birdlens/utils/formatting.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -90,6 +91,20 @@ void main() {
     test('a single run is its own p95', () {
       final s = summarise([const Duration(milliseconds: 7)]);
       expect(s.p95, const Duration(milliseconds: 7));
+    });
+  });
+
+  group('formatting', () {
+    test('timestamps skip the year for this year only', () {
+      final now = DateTime(2026, 10, 23);
+      expect(formatTimestamp(DateTime(2026, 10, 23, 6, 5), now: now), '23 Oct, 06:05');
+      expect(formatTimestamp(DateTime(2025, 1, 2, 14, 30), now: now), '2 Jan 2025, 14:30');
+    });
+
+    test('bytes use decimal units', () {
+      expect(formatBytes(12350408), '12.4 MB');
+      expect(formatBytes(999), '999 B');
+      expect(formatBytes(23393), '23.4 KB');
     });
   });
 }

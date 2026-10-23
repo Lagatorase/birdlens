@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:birdlens/services/classifier.dart';
 import 'package:birdlens/services/preprocessing.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -44,6 +45,8 @@ void main() {
       }
       // Same input pixels and the same model file, so only float rounding
       // and kernel differences between the two runtimes remain.
+      // I print the real gap so PROGRESS.md and the README can quote it.
+      debugPrint('PARITY $name.png max_prob_diff=${maxDiff.toStringAsExponential(2)}');
       expect(maxDiff, lessThan(0.01), reason: 'largest probability difference');
       final top = argmax(probs);
       expect(top, (inputs['png']['outputs'][shipped]['top5'] as List).first);
@@ -56,7 +59,10 @@ void main() {
       final expected = inputs['jpg']['outputs'][shipped] as Map<String, dynamic>;
       // JPEG decoding differs slightly between Dart and Python, so I only
       // require the same top guess and a close top-1 probability.
-      expect(argmax(probs), (expected['top5'] as List).first);
+      final wantTop1Index = (expected['top5'] as List).first as int;
+      debugPrint('PARITY $name.jpg top1_match=${argmax(probs) == wantTop1Index} '
+          'top1_prob_diff=${(probs[wantTop1Index] - ((expected['top5_probs'] as List).first as num)).abs().toStringAsFixed(4)}');
+      expect(argmax(probs), wantTop1Index);
       final wantTop1 = ((expected['top5_probs'] as List).first as num).toDouble();
       expect(probs[argmax(probs)], closeTo(wantTop1, 0.05));
     });
