@@ -1,0 +1,14 @@
+{
+  "best_checkpoint_val_accuracy": 0.7716666460037231,
+  "best_checkpoint_val_top5": 0.9433333277702332,
+  "best_checkpoint_val_loss": 1.734493613243103,
+  "head_epochs_run": 8,
+  "head_best_epoch": 4,
+  "head_best_val_accuracy_logged": 0.6816666722297668,
+  "finetune_epochs_run": 21,
+  "finetune_best_epoch": 15,
+  "finetune_best_val_accuracy_logged": 0.7716666460037231,
+  "head_seconds": 217,
+  "finetune_seconds": 366,
+  "timing_source": "sum of the per-epoch times Keras printed in logs/train.log for the first run (head: 8 epochs, finetune: 21 epochs, both including the one-off PTX kernel compile in their first epoch)"
+}

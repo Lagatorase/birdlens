@@ -1,0 +1,5 @@
+{
+  "head_seconds": 217,
+  "finetune_seconds": 366,
+  "timing_source": "sum of the per-epoch times Keras printed in logs/train.log for the first run (head: 8 epochs, finetune: 21 epochs, both including the one-off PTX kernel compile in their first epoch)"
+}

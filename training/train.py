@@ -102,15 +102,46 @@ def main() -> None:
         timings.update(finetune(args, train_ds, val_ds, loss, metrics))
         finetune_done.write_text("done\n")
 
+    # I keep stage timings in their own file so a resumed run doesn't lose them.
+    timings_file = RESULTS_DIR / "train_timings.json"
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    if timings_file.exists():
+        timings = {**json.loads(timings_file.read_text()), **timings}
+    timings_file.write_text(json.dumps(timings, indent=2))
+
     # I report the best validation score from the saved best checkpoint.
+    # Clearing the session first matters: re-scoring inside the same process
+    # that just trained gave 0.7625 instead of the 0.7717 Keras logged, while
+    # a clean load of the same file reproduced 0.7717 exactly.
+    keras.backend.clear_session()
     best = build_model(weights=None)
     best.load_weights(str(CHECKPOINT_DIR / "finetune" / "best.keras"))
     best.compile(loss=loss, metrics=metrics)
     val_loss, val_acc, val_top5 = best.evaluate(val_ds, verbose=0)
-    summary = {"val_accuracy": val_acc, "val_top5": val_top5, "val_loss": val_loss, **timings}
+    summary = {
+        "best_checkpoint_val_accuracy": val_acc,
+        "best_checkpoint_val_top5": val_top5,
+        "best_checkpoint_val_loss": val_loss,
+        **{f"{stage}_{k}": v for stage in ("head", "finetune") for k, v in history_facts(stage).items()},
+        **timings,
+    }
     print(json.dumps(summary, indent=2))
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     (RESULTS_DIR / "train_summary.json").write_text(json.dumps(summary, indent=2))
+
+
+def history_facts(stage: str) -> dict:
+    """Epochs run and the best epoch, read back from the CSV log."""
+    import csv
+
+    with open(LOG_DIR / f"{stage}_history.csv", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    best = max(rows, key=lambda r: float(r["val_accuracy"]))
+    return {
+        "epochs_run": len(rows),
+        # CSVLogger counts epochs from 0, so I add 1 to match the console log.
+        "best_epoch": int(best["epoch"]) + 1,
+        "best_val_accuracy_logged": float(best["val_accuracy"]),
+    }
 
 
 def finetune(args, train_ds, val_ds, loss, metrics) -> dict:

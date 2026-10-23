@@ -16,8 +16,10 @@ EXPORT_DIR = WORK_DIR / "exports"
 
 # These are committed so the split and results can be reproduced.
 SPLITS_DIR = TRAINING_DIR / "splits"
-RESULTS_DIR = TRAINING_DIR / "results"
-LOG_DIR = TRAINING_DIR / "logs"
+# Both can be redirected, which I use to test resuming without touching the
+# real logs and results.
+RESULTS_DIR = Path(os.environ.get("BIRDLENS_RESULTS", TRAINING_DIR / "results"))
+LOG_DIR = Path(os.environ.get("BIRDLENS_LOGS", TRAINING_DIR / "logs"))
 DOCS_DIR = REPO_DIR / "docs"
 APP_ASSETS_DIR = REPO_DIR / "app" / "assets"
 APP_FIXTURES_DIR = REPO_DIR / "app" / "test" / "fixtures"

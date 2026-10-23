@@ -71,3 +71,14 @@ Work in progress. No action needed from you right now. The ACTION NEEDED about S
   2. `permission_handler_android` 14.1.0 needs `compileSdk = 37`, which this AGP can't resolve against the SDK's `android-37.0` folder. I removed permission_handler. `image_picker` already requests the CAMERA permission declared in the manifest and reports a denial as `camera_access_denied`, which the app turns into a "Camera access is off" dialog.
   3. tflite_flutter's Java targets JVM 11 but its Kotlin defaulted to 25. I pinned its Kotlin `jvmTarget` to 11 in `app/android/build.gradle.kts`.
 - `flutter analyze`: no issues. `flutter test`: 35 passed (unit and widget). The parity test is skipped until the fixtures exist. The debug APK builds.
+
+## Phase 3: Training (2026-10-23)
+
+- Model: EfficientNetV2-B0 (ImageNet weights, built-in 0 to 255 input rescaling), global average pooling, dropout 0.3, Dense(200) softmax in float32. Input 224x224, mixed precision, batch 16, label smoothing 0.1.
+- Light GPU mode: memory growth on plus a 4000 MiB logical-device cap (about half of 8151 MiB), `nice -n 10`, 4 tf.data workers with a 4-thread private pool. The PTX JIT compile makes the first epoch of each stage slow: 153 s and 140 s. After that, epochs took 7 to 18 s. GPU use was about 30% and the training process used about 2.5 of 12 CPU threads.
+- Stage 1 (head only, Adam 1e-3, early stopping patience 4): 8 epochs, best val accuracy **68.17%** at epoch 4.
+- Stage 2 (top 40% of backbone layers unfrozen, 87 layers, batch norm kept frozen; AdamW, cosine decay from 1e-4, weight decay 1e-5; patience 6): 21 epochs, best val accuracy **77.17%** (top-5 **94.33%**) at epoch 15. Training accuracy reached 99%, so the model clearly overfits the 5,394 training images. Validation plateaued around 75 to 77% from epoch 6 onwards.
+- Source: `training/results/train_summary.json`, written by `training/train.py`. Per-epoch numbers are in `training/logs/*_history.csv`. Total time was about 10 minutes of epochs (217 s plus 366 s).
+- A bug I caught: the first summary reported 76.25% val accuracy, not the 77.17% Keras logged for the best epoch. Re-scoring the saved `best.keras` and `epoch_15.keras` in a fresh process (`training/scripts/check_checkpoints.py`) gave 77.17% under both float32 and mixed precision. So the weights were fine, and the in-process re-evaluation after training was the problem. `train.py` now clears the Keras session first and gives the same 77.17%.
+- Resumability checked with `training/scripts/resume_test.sh`, which runs in a throwaway folder: I killed a run with `kill -9` during head epoch 3, and the restart continued at "Epoch 3/4" with no duplicate history rows. A rerun after both stages are done skips straight to the summary.
+- Next: export the TFLite variants and evaluate them.
