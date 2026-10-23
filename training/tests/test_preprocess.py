@@ -53,8 +53,10 @@ def test_eval_matches_reference_bilinear():
     array = rng.integers(0, 256, size=(375, 500, 3), dtype=np.uint8)
     out = eval_preprocess(tf.constant(_png_bytes(array))).numpy()
     ref = _reference_bilinear(array, 224, 224)
-    # This is the exact algorithm the Dart code implements.
-    np.testing.assert_allclose(out, ref, atol=1e-3)
+    # This is the exact algorithm the Dart code implements. TensorFlow works
+    # out the sample positions in float32 while my reference (and Dart) use
+    # float64, which moves values by up to about 0.01 on the 0 to 255 scale.
+    np.testing.assert_allclose(out, ref, atol=0.02)
 
 
 def test_greyscale_becomes_rgb():

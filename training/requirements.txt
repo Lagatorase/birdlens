@@ -1,1 +1,12 @@
+# Top-level packages, pinned exactly. requirements.lock.txt has the full resolved set.
+# TF 2.21.0 is the newest stable release (March 2026). Its TFLiteConverter
+# converts Keras 3 models directly, which I tested before training.
 tensorflow[and-cuda]==2.21.0
+keras==3.15.1
+numpy==2.4.6
+# tf.lite.Interpreter is deprecated in favour of LiteRT, so I evaluate the
+# exported .tflite files with the LiteRT interpreter.
+ai-edge-litert==2.3.0
+pillow==13.0.0
+matplotlib==3.11.2
+pytest==9.1.1
