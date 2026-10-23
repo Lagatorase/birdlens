@@ -1,11 +1,11 @@
 # Python and the training environment
-training/.venv/
+training/.venv
 __pycache__/
 *.pyc
 .pytest_cache/
 
 # Dataset (CUB-200-2011 is for non-commercial research use, so I never commit it)
-training/data/
+training/data
 CUB_200_2011/
 *.tgz
 *.tar.gz
