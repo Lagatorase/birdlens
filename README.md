@@ -19,6 +19,15 @@ An Android app that identifies 200 bird species from a photo, entirely on the ph
 
 **[Download the APK (v1.0.0)](https://github.com/Lagatorase/birdlens/releases/tag/v1.0.0)** for Android 8.0 or newer.
 
+## Key findings
+
+- **75.1% top-1 and 92.8% top-5 on the 5,794-photo CUB test set**, from a 6.2M-parameter EfficientNetV2-B0 running fully offline as a 12.4 MB float16 TFLite file.
+- **float16 matches float32 at half the size:** 12.4 MB against 24.5 MB, 75.1% against 75.2% top-1, and the same top-1 answer on 99.9% of test photos.
+- **int8 isn't worth it here:** it saves another 5 MB, but costs 2.1 points of top-1 (73.0%) and changes the answer on 11.8% of photos.
+- **The phone matches Python:** on the emulator, Dart preprocessing plus tflite_flutter is within 1.2e-6 of the Python probabilities on lossless inputs, and gives the same top-1 on all four JPEG fixtures.
+- **The 0.44 "Not confident" threshold, picked on validation,** keeps 69.0% of test photos at 88.1% accuracy. The photos below it are right only 46.2% of the time.
+- **Out-of-scope photos:** "Not confident" shows for 98.3% of photos with no bird and 88.7% of birds from species outside CUB, against 31.0% of CUB test photos. That still leaves 11.3% of non-CUB birds with a confident wrong species.
+
 ## The problem
 
 Most bird ID apps upload your photo to a server. I wanted to see how well a small model can do running only on the phone: no upload, works offline, quick enough to feel instant. That meant training my own classifier, shrinking it for mobile, and proving the phone gives the same answers as my Python evaluation.
@@ -216,3 +225,8 @@ The CUB-200-2011 images are not part of this repository, apart from a few downsi
 ## Author
 
 Lucas Lee, Temasek Polytechnic.
+
+## Related projects
+
+- [CiteBank](https://github.com/Lagatorase/citebank): a RAG pipeline that answers questions about the DBS, OCBC and UOB annual reports with page-level citations, plus an eval suite that measures what each design choice is worth.
+- [Credit Risk Scorecard](https://github.com/Lagatorase/credit-risk-scorecard): credit risk scoring on Home Credit data, comparing LightGBM with a WoE scorecard, with reason codes, fairness checks and LLM explanations.
