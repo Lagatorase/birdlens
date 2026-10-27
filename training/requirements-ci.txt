@@ -1,0 +1,7 @@
+# Only what the pytest tests import, for CI.
+# tests/test_preprocess.py needs TensorFlow for the eval and train preprocessing,
+# so I use the CPU-only wheel instead of tensorflow[and-cuda] with its CUDA libraries.
+tensorflow-cpu==2.21.0
+numpy==2.4.6
+pillow==13.0.0
+pytest==9.1.1

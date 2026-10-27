@@ -1,5 +1,6 @@
 # BirdLens
 
+[![Tests](https://github.com/Lagatorase/birdlens/actions/workflows/tests.yml/badge.svg)](https://github.com/Lagatorase/birdlens/actions/workflows/tests.yml)
 [![Latest release](https://img.shields.io/github/v/release/Lagatorase/birdlens)](https://github.com/Lagatorase/birdlens/releases/latest)
 [![License: MIT](https://img.shields.io/github/license/Lagatorase/birdlens)](LICENSE)
 ![Flutter 3.47](https://img.shields.io/badge/Flutter-3.47-02569B?logo=flutter&logoColor=white)
