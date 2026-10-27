@@ -94,9 +94,23 @@ The worst single classes are Western Wood Pewee (13% correct, usually called an 
 
 ![Confident mistakes from the most confused pairs](docs/misclassifications.png)
 
+## Out-of-scope photos
+
+The threshold was tuned on CUB photos only, so I checked what it does on photos the model was never meant to see. I built two sets of 300 photos each ([training/scripts/build_out_of_scope.py](training/scripts/build_out_of_scope.py)). The first has birds of 20 species that aren't among the 200: ten North American (American Robin, Mourning Dove, Bald Eagle and so on) and ten from elsewhere (European Robin, Rainbow Lorikeet, Laughing Kookaburra and so on), 15 photos each, from research-grade iNaturalist observations licensed CC0 or CC BY. The second has photos with no bird: animals, plants, objects and scenes from the Open Images V7 validation set (CC BY 2.0), skipping any photo with a bird label. The manifests in [training/out_of_scope/](training/out_of_scope/) list every photo's source, licence and author. I ran the app's float16 file through the LiteRT interpreter with the same preprocessing as `evaluate.py` ([training/evaluate_out_of_scope.py](training/evaluate_out_of_scope.py), output in [training/results/out_of_scope.json](training/results/out_of_scope.json)). The threshold stayed at 0.44.
+
+| Photo set | Photos | "Not confident" shown | Median top-1 probability |
+|---|---|---|---|
+| CUB test set (for comparison) | 5,794 | 31.0% | 0.64 |
+| Birds of species not in CUB | 300 | 88.7% | 0.17 |
+| Photos with no bird | 300 | 98.3% | 0.07 |
+
+![Top-1 confidence on the CUB test set and the two out-of-scope sets](docs/out_of_scope_confidence.png)
+
+The message catches almost every photo with no bird: 5 of 300 got a confident answer, all between 0.46 and 0.55, and four of them were gulls (two road photos, a car and a sea view). Birds outside the 200 species are harder. 34 of 300 (11.3%) still got a confident wrong species, and one of those was above 0.9. The worst were House Finch (7 of 15 confident) and Rainbow Lorikeet (8 of 15), and the commonest confident answers were Painted Bunting (8) and Purple Finch (4). A caveat: many iNaturalist photos show small, distant birds, which also lowers confidence on in-scope species, so some of the 88.7% comes from harder photos rather than unknown species.
+
 ## Limitations
 
-- It only knows the 200 CUB species. Any other bird gets labelled as one of those 200, sometimes confidently.
+- It only knows the 200 CUB species. Any other bird gets labelled as one of those 200, sometimes confidently (11.3% of my out-of-scope bird photos got a confident wrong answer).
 - CUB photos are mostly clear, close shots. Blurry, distant, backlit or partly hidden birds will do worse than the test numbers suggest.
 - With about 27 training photos per species, the model overfits (99% training accuracy against 77% validation).
 - The benchmark numbers come from an emulator, not a real phone.
@@ -128,6 +142,7 @@ birdlens/
 │   ├── birdlens_train/       shared code: data, model, preprocessing, metrics
 │   ├── scripts/              environment setup, dataset download, checks
 │   ├── splits/               the exact train, val and test split used
+│   ├── out_of_scope/         manifests of the out-of-scope photo sets
 │   ├── results/              metrics JSON quoted in this README
 │   └── tests/                pytest tests
 └── docs/                     model card, emulator results, screenshots, figures
@@ -166,6 +181,8 @@ python evaluate.py               # LiteRT evaluation on test and validation
 python choose_threshold.py --variant float16
 python analyze_errors.py --variant float16
 python prepare_app_assets.py --variant float16   # copies the model into the app
+python scripts/build_out_of_scope.py             # downloads the out-of-scope photo sets
+python evaluate_out_of_scope.py                  # "Not confident" rate on those sets
 python -m pytest                 # label cleaning, split, preprocessing, metrics
 ```
 
@@ -187,13 +204,14 @@ The model, labels and config are already committed in `app/assets/`, so you don'
 
 - **CUB-200-2011:** C. Wah, S. Branson, P. Welinder, P. Perona and S. Belongie. *The Caltech-UCSD Birds-200-2011 Dataset.* California Institute of Technology, Technical Report CNS-TR-2011-001, 2011.
 - **EfficientNetV2:** M. Tan and Q. V. Le. *EfficientNetV2: Smaller Models and Faster Training.* ICML 2021. I used the ImageNet weights shipped with Keras.
+- **Out-of-scope photos:** bird photos by iNaturalist observers (CC0 or CC BY) and photos from the [Open Images Dataset V7](https://storage.googleapis.com/openimages/web/index.html) (CC BY 2.0). Each photo's author and licence are in [training/out_of_scope/](training/out_of_scope/).
 - [tflite_flutter](https://pub.dev/packages/tflite_flutter) for running TensorFlow Lite from Dart, and [LiteRT](https://ai.google.dev/edge/litert) for the Python interpreter used in evaluation.
 
 ## License
 
 My code is released under the [MIT License](LICENSE).
 
-The CUB-200-2011 images are not part of this repository, apart from a few downsized test images used for fixtures and figures. They come from Flickr and are for non-commercial research and educational use only. See the [model card](docs/model_card.md) for details.
+The CUB-200-2011 images are not part of this repository, apart from a few downsized test images used for fixtures and figures. They come from Flickr and are for non-commercial research and educational use only. See the [model card](docs/model_card.md) for details. The out-of-scope photos aren't in the repository either, only manifests with their sources, licences and authors.
 
 ## Author
 

@@ -1,0 +1,306 @@
+{
+  "model": "app/assets/models/birdlens.tflite (float16)",
+  "threshold": 0.44,
+  "cub_test": {
+    "images": 5794,
+    "not_confident_rate": 0.309975837072834,
+    "confidence_median": 0.6419177651405334,
+    "confidence_mean": 0.602759838104248,
+    "confidence_p10": 0.2160123586654663,
+    "confidence_p90": 0.925162136554718,
+    "share_at_or_above_0.9": 0.15412495685191577,
+    "top1": 0.7514670348636521
+  },
+  "non_cub_birds": {
+    "images": 300,
+    "not_confident_rate": 0.8866666666666667,
+    "confidence_median": 0.16606533527374268,
+    "confidence_mean": 0.22172287106513977,
+    "confidence_p10": 0.07847408950328827,
+    "confidence_p90": 0.46247199177742004,
+    "share_at_or_above_0.9": 0.0033333333333333335,
+    "by_group": {
+      "north_american": {
+        "images": 150,
+        "not_confident_rate": 0.88,
+        "confidence_median": 0.15849047899246216
+      },
+      "elsewhere": {
+        "images": 150,
+        "not_confident_rate": 0.8933333333333333,
+        "confidence_median": 0.1754586398601532
+      }
+    },
+    "by_name": {
+      "American Robin": {
+        "images": 15,
+        "not_confident_rate": 0.8666666666666667,
+        "confidence_median": 0.1500401794910431
+      },
+      "Mourning Dove": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.12083633244037628
+      },
+      "Black-capped Chickadee": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.1679176241159439
+      },
+      "Tufted Titmouse": {
+        "images": 15,
+        "not_confident_rate": 0.9333333333333333,
+        "confidence_median": 0.1302437037229538
+      },
+      "House Finch": {
+        "images": 15,
+        "not_confident_rate": 0.5333333333333333,
+        "confidence_median": 0.2600289285182953
+      },
+      "Great Blue Heron": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.17055241763591766
+      },
+      "Red-tailed Hawk": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.13455893099308014
+      },
+      "Bald Eagle": {
+        "images": 15,
+        "not_confident_rate": 0.9333333333333333,
+        "confidence_median": 0.1624620407819748
+      },
+      "Canada Goose": {
+        "images": 15,
+        "not_confident_rate": 0.8,
+        "confidence_median": 0.1318844109773636
+      },
+      "Eastern Bluebird": {
+        "images": 15,
+        "not_confident_rate": 0.7333333333333333,
+        "confidence_median": 0.2533921003341675
+      },
+      "European Robin": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.1563829481601715
+      },
+      "Eurasian Blue Tit": {
+        "images": 15,
+        "not_confident_rate": 0.8,
+        "confidence_median": 0.21718564629554749
+      },
+      "Common Chaffinch": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.13493585586547852
+      },
+      "Eurasian Magpie": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.1514146327972412
+      },
+      "Rainbow Lorikeet": {
+        "images": 15,
+        "not_confident_rate": 0.4666666666666667,
+        "confidence_median": 0.5261320471763611
+      },
+      "Laughing Kookaburra": {
+        "images": 15,
+        "not_confident_rate": 0.8,
+        "confidence_median": 0.1435309797525406
+      },
+      "Common Myna": {
+        "images": 15,
+        "not_confident_rate": 0.9333333333333333,
+        "confidence_median": 0.15304112434387207
+      },
+      "Red-whiskered Bulbul": {
+        "images": 15,
+        "not_confident_rate": 0.9333333333333333,
+        "confidence_median": 0.1798844188451767
+      },
+      "Indian Peafowl": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.1739562302827835
+      },
+      "Superb Fairywren": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.22234806418418884
+      }
+    },
+    "most_common_confident_answers": [
+      [
+        "Painted Bunting",
+        8
+      ],
+      [
+        "Purple Finch",
+        4
+      ],
+      [
+        "Yellow-billed Cuckoo",
+        3
+      ],
+      [
+        "Orchard Oriole",
+        2
+      ],
+      [
+        "Gadwall",
+        2
+      ]
+    ]
+  },
+  "non_birds": {
+    "images": 300,
+    "not_confident_rate": 0.9833333333333333,
+    "confidence_median": 0.07032246887683868,
+    "confidence_mean": 0.0985666811466217,
+    "confidence_p10": 0.039337463676929474,
+    "confidence_p90": 0.17637988924980164,
+    "share_at_or_above_0.9": 0.0,
+    "by_group": {
+      "animal": {
+        "images": 75,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.07200136035680771
+      },
+      "plant": {
+        "images": 75,
+        "not_confident_rate": 0.9866666666666667,
+        "confidence_median": 0.08218001574277878
+      },
+      "object": {
+        "images": 75,
+        "not_confident_rate": 0.9866666666666667,
+        "confidence_median": 0.058678485453128815
+      },
+      "scene": {
+        "images": 75,
+        "not_confident_rate": 0.96,
+        "confidence_median": 0.07924261689186096
+      }
+    },
+    "by_name": {
+      "Dog": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.06583819538354874
+      },
+      "Cat": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.07377356290817261
+      },
+      "Horse": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.061505939811468124
+      },
+      "Butterfly": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.0770045667886734
+      },
+      "Fish": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.09712539613246918
+      },
+      "Flower": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.09058261662721634
+      },
+      "Tree": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.09068962186574936
+      },
+      "Houseplant": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.05847707763314247
+      },
+      "Leaf": {
+        "images": 15,
+        "not_confident_rate": 0.9333333333333333,
+        "confidence_median": 0.09390221536159515
+      },
+      "Cactus": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.08009486645460129
+      },
+      "Car": {
+        "images": 15,
+        "not_confident_rate": 0.9333333333333333,
+        "confidence_median": 0.142841637134552
+      },
+      "Bicycle": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.04696827009320259
+      },
+      "Chair": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.059116583317518234
+      },
+      "Mobile phone": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.05742208659648895
+      },
+      "Guitar": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.04622306674718857
+      },
+      "Skyscraper": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.07924261689186096
+      },
+      "Mountain": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.06686700135469437
+      },
+      "Sea": {
+        "images": 15,
+        "not_confident_rate": 0.9333333333333333,
+        "confidence_median": 0.12614282965660095
+      },
+      "Room": {
+        "images": 15,
+        "not_confident_rate": 1.0,
+        "confidence_median": 0.04968328773975372
+      },
+      "Road": {
+        "images": 15,
+        "not_confident_rate": 0.8666666666666667,
+        "confidence_median": 0.10832194238901138
+      }
+    },
+    "most_common_confident_answers": [
+      [
+        "Western Gull",
+        3
+      ],
+      [
+        "Blue-winged Warbler",
+        1
+      ],
+      [
+        "Herring Gull",
+        1
+      ]
+    ]
+  }
+}
