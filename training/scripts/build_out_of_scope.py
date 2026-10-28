@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import html
 import io
 import json
 import sys
@@ -115,6 +116,15 @@ def resolve_taxon(name: str) -> dict:
     return next(t for t in results if t["name"] == name)
 
 
+def inat_author(obs: dict, photo: dict) -> str:
+    # CC BY photos come with a full credit line, but CC0 ones only say "no rights
+    # reserved", so I add the observer's name myself (or their login if they have none).
+    if photo["license_code"] != "cc0":
+        return photo["attribution"]
+    user = obs["user"]
+    return f"{user.get('name') or user['login']}, no rights reserved (CC0)"
+
+
 def build_bird_manifest(rng: np.random.Generator) -> list[dict]:
     rows = []
     for taxon in NORTH_AMERICAN + ELSEWHERE:
@@ -155,7 +165,7 @@ def build_bird_manifest(rng: np.random.Generator) -> list[dict]:
                     "source_url": photo["url"].replace("/square.", "/medium."),
                     "page_url": f"https://www.inaturalist.org/observations/{obs['id']}",
                     "license": photo["license_code"].upper().replace("CC-BY", "CC BY"),
-                    "author": photo["attribution"],
+                    "author": inat_author(obs, photo),
                 }
             )
     return rows
@@ -212,7 +222,8 @@ def build_non_bird_manifest(rng: np.random.Generator, meta_dir: Path) -> list[di
                         "source_url": f"https://open-images-dataset.s3.amazonaws.com/validation/{image_id}.jpg",
                         "page_url": meta["OriginalLandingURL"],
                         "license": "CC BY 2.0",
-                        "author": meta["Author"],
+                        # A few Open Images author names are still HTML escaped, like O&#x27;Hara.
+                        "author": html.unescape(meta["Author"]),
                         # Open Images says how far to rotate some photos to make them upright.
                         "rotation": meta["Rotation"],
                     }
