@@ -87,7 +87,11 @@ The float32 file scores 77.17% on validation, the same as the Keras checkpoint, 
 
 These are mostly pairs that birders also find hard from a single photo. `docs/misclassifications.png` shows the most confident mistake from each of the top pairs.
 
-**Out-of-scope photos** (`training/evaluate_out_of_scope.py`, `training/results/out_of_scope.json`, figure `docs/out_of_scope_confidence.png`): I ran the shipped float16 file through the LiteRT interpreter, with the same preprocessing as `evaluate.py`, on two sets built by `training/scripts/build_out_of_scope.py`. The threshold stayed at 0.44. I didn't tune anything on these sets.
+**On-device check**: the app's Dart preprocessing plus tflite_flutter on the Android emulator matches the Python outputs to within 1.2e-6 on lossless inputs, and gives the same top-1 on all JPEG fixtures. Details are in `docs/emulator_results.md`.
+
+### Out-of-scope photos
+
+Script `training/evaluate_out_of_scope.py`, results `training/results/out_of_scope.json`, figure `docs/out_of_scope_confidence.png`. I ran the shipped float16 file through the LiteRT interpreter, with the same preprocessing as `evaluate.py`, on two sets built by `training/scripts/build_out_of_scope.py`. The threshold stayed at 0.44. I didn't tune anything on these sets.
 
 | Photo set | Source and licence | Photos | Below 0.44 ("Not confident") | Median top-1 |
 |---|---|---|---|---|
@@ -98,8 +102,6 @@ These are mostly pairs that birders also find hard from a single photo. `docs/mi
 The bird species are American Robin, Mourning Dove, Black-capped Chickadee, Tufted Titmouse, House Finch, Great Blue Heron, Red-tailed Hawk, Bald Eagle, Canada Goose, Eastern Bluebird, European Robin, Eurasian Blue Tit, Common Chaffinch, Eurasian Magpie, Rainbow Lorikeet, Laughing Kookaburra, Common Myna, Red-whiskered Bulbul, Indian Peafowl and Superb Fairywren. All photos were shrunk to at most 512 px, like the app's photo picker does. The per-photo sources, licences and authors are in `training/out_of_scope/`, and the photos themselves are not in the repository.
 
 On the non-bird set, 5 of 300 photos got a confident answer, all between 0.46 and 0.55: "Western Gull" for two road photos and a car, "Herring Gull" for a sea view and "Blue-winged Warbler" for a leaf. On the non-CUB birds, 34 of 300 (11.3%) got a confident wrong species, one of them above 0.9. House Finch (7 of 15 confident) and Rainbow Lorikeet (8 of 15) were the weakest, and the commonest confident answers were Painted Bunting (8) and Purple Finch (4). Many iNaturalist photos show small or distant birds, which also lowers confidence on in-scope species, so part of the 88.7% is down to harder photos rather than unknown species. These are small sets, so each rate has a margin of a few points.
-
-**On-device check**: the app's Dart preprocessing plus tflite_flutter on the Android emulator matches the Python outputs to within 1.2e-6 on lossless inputs, and gives the same top-1 on all JPEG fixtures. Details are in `docs/emulator_results.md`.
 
 ## Known limitations
 
