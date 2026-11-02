@@ -9,6 +9,11 @@
 
 An Android app that identifies 200 bird species from a photo, entirely on the phone, using a TensorFlow Lite model I trained on CUB-200-2011.
 
+**Results at a glance** (5,794-photo CUB-200 test set)
+- 75.1% top-1 and 92.8% top-5 across 200 species.
+- 12.4 MB float16 TFLite model, same accuracy as float32 at half the size.
+- Runs fully offline on the phone, about 51 to 57 ms per photo on the emulator.
+
 <p>
   <img src="docs/screenshots/1_home.png" width="160" alt="Home screen">
   <img src="docs/screenshots/2_result.png" width="160" alt="Result for a Painted Bunting">
