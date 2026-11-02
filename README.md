@@ -104,7 +104,7 @@ The model is weakest on species that are hard for people too ([training/analyze_
 | Arctic Tern and Common Tern | 14 |
 | Common Tern and Forster's Tern | 13 |
 
-The worst single classes are Western Wood Pewee (13% correct, usually called an Olive-sided Flycatcher), Brewer's Blackbird (14%, called a Shiny Cowbird) and Common Tern (17%, called an Arctic Tern). The full lists are in the [model card](docs/model_card.md).
+The worst single classes are Western Wood-Pewee (13% correct, usually called an Olive-sided Flycatcher), Brewer's Blackbird (14%, called a Shiny Cowbird) and Common Tern (17%, called an Arctic Tern). The full lists are in the [model card](docs/model_card.md).
 
 ![Confident mistakes from the most confused pairs](docs/misclassifications.png)
 

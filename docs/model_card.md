@@ -59,7 +59,7 @@ The float32 file scores 77.17% on validation, the same as the Keras checkpoint, 
 
 | Species | Accuracy | Most common wrong guess |
 |---|---|---|
-| Western Wood Pewee | 13% | Olive-sided Flycatcher |
+| Western Wood-Pewee | 13% | Olive-sided Flycatcher |
 | Brewer's Blackbird | 14% | Shiny Cowbird |
 | Common Tern | 17% | Arctic Tern |
 | American Crow | 23% | Fish Crow |
@@ -69,6 +69,8 @@ The float32 file scores 77.17% on validation, the same as the Keras checkpoint, 
 | Bank Swallow | 40% | Gray Kingbird |
 | Elegant Tern | 40% | Caspian Tern |
 | Least Flycatcher | 45% | Acadian Flycatcher |
+
+CUB's class label for the Western Wood-Pewee is `Western_Wood_Pewee`, without the hyphen.
 
 **Most confused pairs**, counting mistakes in both directions:
 
